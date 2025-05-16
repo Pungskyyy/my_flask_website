@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+  <div class="max-w-7xl mx-auto">
+
+    <!-- Header -->
+    <header class="flex items-center justify-between mb-8">
+      <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Halo, {{ username|capitalize }}!</h1>
+      <a href="{{ url_for('logout') }}" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded shadow">Logout</a>
+    </header>
+    
+    <!-- Profile Picture + Upload Form -->
+    <section class="flex items-center space-x-6 mb-8">
+      <div class="w-24 h-24 rounded-full border-4 border-indigo-600 overflow-hidden bg-gray-300 dark:bg-gray-700">
+        {% if profile_pic %}
+          <img src="{{ url_for('static', filename='uploads/' + profile_pic) }}" alt="Profile Picture" class="object-cover w-full h-full" />
+        {% else %}
+          <svg class="w-full h-full text-indigo-400" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+          </svg>
+        {% endif %}
+      </div>
+    
+      <form method="POST" enctype="multipart/form-data" class="flex flex-col space-y-3" action="{{ url_for('dashboard') }}">
+        <label class="text-gray-700 dark:text-gray-300 font-semibold">Ubah Foto Profil</label>
+        <input type="file" name="profile_pic" accept="image/*" class="text-sm file:border file:border-indigo-600 file:rounded file:px-3 file:py-1 file:bg-indigo-50 file:text-indigo-600 cursor-pointer" required />
+        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded font-semibold shadow">
+          Upload
+        </button>
+      </form>
+    </section>
+    
+    <!-- Statistik Section -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div class="bg-white dark:bg-gray-800 p-6 rounded shadow">
+        <h2 class="text-xl font-semibold mb-2 text-gray-800 dark:text-gray-200">Statistik Login</h2>
+        <p>Total Logins: <strong>{{ stats.total_logins }}</strong></p>
+      </div>
+      <div class="bg-white dark:bg-gray-800 p-6 rounded shadow">
+        <h2 class="text-xl font-semibold mb-2 text-gray-800 dark:text-gray-200">Tasks Pending</h2>
+        <p>Sisa tugas: <strong>{{ stats.tasks_pending }}</strong></p>
+      </div>
+      <div class="bg-white dark:bg-gray-800 p-6 rounded shadow">
+        <h2 class="text-xl font-semibold mb-2 text-gray-800 dark:text-gray-200">Unread Messages</h2>
+        <p>Pesan belum dibaca: <strong>{{ stats.unread_messages }}</strong></p>
+      </div>
+    </section>
+    
+    <!-- Messages Section -->
+    <section class="mb-8">
+      <h2 class="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Messages</h2>
+      <ul class="space-y-3">
+        {% for msg in messages %}
+          <li class="bg-white dark:bg-gray-800 p-4 rounded shadow">
+            <h3 class="font-semibold text-indigo-700 dark:text-indigo-400">{{ msg.title }}</h3>
+            <p class="text-gray-700 dark:text-gray-300">{{ msg.body }}</p>
+          </li>
+        {% else %}
+          <li class="text-gray-600 dark:text-gray-400">Tidak ada pesan.</li>
+        {% endfor %}
+      </ul>
+    </section>
+    
+    <!-- Daily Quote -->
+    <section>
+      <h2 class="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">Quote Harian</h2>
+      <blockquote class="italic text-gray-600 dark:text-gray-400 border-l-4 border-indigo-600 pl-4">{{ daily_quote }}</blockquote>
+    </section>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="mt-6 max-w-md mx-auto space-y-3">
+      {% for category, message in messages %}
+      <div class="p-4 rounded {{ 'bg-green-100 text-green-700' if category == 'success' else 'bg-red-100 text-red-700' }}">
+        {{ message }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+  </div>
+</div>
+{% endblock %}

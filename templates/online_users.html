@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <title>User Online</title>
+</head>
+<body>
+    <h1>User yang sedang online</h1>
+    <ul>
+    {% for user in users %}
+        <li>{{ user.username }} ({{ user.email }}) - Login terakhir: {{ user.last_login }}</li>
+    {% else %}
+        <li>Tidak ada user yang sedang online.</li>
+    {% endfor %}
+    </ul>
+    <a href="{{ url_for('dashboard') }}">Kembali ke dashboard</a>
+</body>
+</html>

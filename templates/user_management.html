@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}User Management{% endblock %}
+{% block content %}
+<div class="container">
+  <h4>Daftar Pengguna</h4>
+  <table class="table table-bordered mt-3">
+    <thead>
+      <tr>
+        <th>Username</th>
+        <th>Nama Lengkap</th>
+        <th>Email</th>
+        <th>Terdaftar</th>
+        <th>Login Terakhir</th>
+        <th>Total Login</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for uname, data in users.items() %}
+      <tr>
+        <td>{{ uname }}</td>
+        <td>{{ data.fullname }}</td>
+        <td>{{ data.email }}</td>
+        <td>{{ data.registered_on.strftime('%d-%m-%Y') }}</td>
+        <td>{{ data.last_login.strftime('%d-%m-%Y %H:%M:%S') if data.last_login else "-" }}</td>
+        <td>{{ data.login_count }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

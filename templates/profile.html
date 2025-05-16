@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block title %}Profile - FlaskApp{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-gradient-to-br from-indigo-900 to-purple-900 rounded-xl shadow-neu p-10 text-white">
+  <h3 class="text-3xl font-extrabold mb-6 text-center">Your Profile</h3>
+  <p class="mb-5 text-lg"><strong>Email:</strong> <span class="font-semibold">{{ current_user.email }}</span></p>
+  <a href="{{ url_for('dashboard') }}" class="neu-btn w-full text-center">Back to Dashboard</a>
+</div>
+{% endblock %}
