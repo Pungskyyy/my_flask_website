@@ -2,14 +2,25 @@
 {% block title %}Login{% endblock %}
 {% block content %}
 <div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-6">
-  <div class="max-w-md w-full bg-white dark:bg-gray-800 p-8 rounded shadow">
-    <h2 class="text-2xl font-bold mb-6 text-indigo-700 dark:text-indigo-400">Login</h2>
+  <div class="max-w-md w-full bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg">
+    <h2 class="text-3xl font-extrabold mb-8 text-indigo-700 dark:text-indigo-400 text-center">Login</h2>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
-        <div class="mb-4">
+        <div class="mb-6 space-y-3">
           {% for category, message in messages %}
-            <div class="px-4 py-2 rounded mb-2 text-sm {% if category == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+            <div class="flex items-center px-4 py-3 rounded text-sm
+              {% if category == 'error' %}
+                bg-red-100 text-red-700
+              {% else %}
+                bg-green-100 text-green-700
+              {% endif %}
+            ">
+              {% if category == 'error' %}
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12" y2="16"/></svg>
+              {% else %}
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+              {% endif %}
               {{ message }}
             </div>
           {% endfor %}
@@ -17,27 +28,49 @@
       {% endif %}
     {% endwith %}
 
-    <form method="POST" novalidate>
+    <form method="POST" novalidate class="space-y-6">
       {{ form.hidden_tag() }}
 
-      <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-300" for="username">Username</label>
-      {{ form.username(class="w-full px-3 py-2 mb-4 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-600 dark:bg-gray-700 dark:border-gray-600 dark:text-white") }}
-      {% for error in form.username.errors %}
-        <span class="text-red-600 text-sm">{{ error }}</span>
-      {% endfor %}
+      <!-- Username -->
+      <div>
+        <label for="username" class="block mb-2 font-semibold text-gray-700 dark:text-gray-300">Username</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 dark:text-gray-500">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z"/><path d="M16 16v1a4 4 0 01-8 0v-1"/></svg>
+          </span>
+          {{ form.username(class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-600 dark:bg-gray-700 dark:border-gray-600 dark:text-white") }}
+        </div>
+        {% for error in form.username.errors %}
+          <p class="text-red-600 text-sm mt-1">{{ error }}</p>
+        {% endfor %}
+      </div>
 
-      <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-300" for="password">Password</label>
-      {{ form.password(class="w-full px-3 py-2 mb-6 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-600 dark:bg-gray-700 dark:border-gray-600 dark:text-white") }}
-      {% for error in form.password.errors %}
-        <span class="text-red-600 text-sm">{{ error }}</span>
-      {% endfor %}
+      <!-- Password -->
+      <div>
+        <label for="password" class="block mb-2 font-semibold text-gray-700 dark:text-gray-300">Password</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 dark:text-gray-500">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          </span>
+          {{ form.password(class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-600 dark:bg-gray-700 dark:border-gray-600 dark:text-white") }}
+        </div>
+        {% for error in form.password.errors %}
+          <p class="text-red-600 text-sm mt-1">{{ error }}</p>
+        {% endfor %}
+      </div>
 
-      {{ form.submit(class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded font-semibold cursor-pointer") }}
+      <!-- Submit -->
+      <div>
+        {{ form.submit(class="w-full flex justify-center items-center bg-indigo-600 hover:bg-indigo-700 transition-colors text-white py-2 rounded font-semibold cursor-pointer") }}
+        <svg class="ml-2 w-5 h-5 inline-block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </div>
     </form>
 
-    <p class="mt-4 text-center text-gray-600 dark:text-gray-400">
+    <p class="mt-6 text-center text-gray-600 dark:text-gray-400">
       Belum punya akun? 
-      <a href="{{ url_for('register') }}" class="text-indigo-600 hover:underline">Daftar di sini</a>.
+      <a href="{{ url_for('register') }}" class="text-indigo-600 hover:underline hover:text-indigo-800 transition-colors font-semibold">
+        Daftar di sini
+      </a>.
     </p>
   </div>
 </div>
