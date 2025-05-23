@@ -31,7 +31,7 @@
   </style>
 </head>
 
-<body x-data="{ darkMode: localStorage.getItem('theme') === 'dark' }"
+<body x-data
       x-init="$watch('darkMode', v => localStorage.setItem('theme', v ? 'dark' : 'light'))"
       :class="{ 'dark': darkMode }"
       class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300 min-h-screen flex flex-col">

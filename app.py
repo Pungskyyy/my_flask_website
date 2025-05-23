@@ -1,143 +1,139 @@
-import os
-from flask import Flask, render_template, redirect, url_for, flash, session, request
+from flask import Flask, render_template, redirect, url_for, request, session, flash
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField
-from wtforms.validators import InputRequired, Length, EqualTo
-from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
+from wtforms import StringField, PasswordField, SubmitField
+from wtforms.validators import DataRequired, Length, EqualTo
+from datetime import datetime
+import os
+import random
 
 app = Flask(__name__)
-app.secret_key = "secretkey"  # Ganti dengan secret key aman
+app.secret_key = 'your_secret_key'
+app.config['UPLOAD_FOLDER'] = 'static/uploads'
 
-# Upload config
-UPLOAD_FOLDER = 'static/uploads'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024  # max 2MB
+# In-memory mock database
+users = {}
+login_activity = []
+user_tasks = {}
+user_messages = {}
+user_notifications = {}
 
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
+DAILY_QUOTES = [
+    "Hidup adalah petualangan yang berani atau tidak sama sekali.",
+    "Kerja keras mengalahkan bakat saat bakat tidak bekerja keras.",
+    "Lakukan sesuatu hari ini yang akan membuat dirimu di masa depan berterima kasih."
+]
 
-users_db = {}
+# Flask-WTF Forms
+class LoginForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired(), Length(min=3)])
+    password = PasswordField('Password', validators=[DataRequired()])
+    submit = SubmitField('Login')
 
 class RegisterForm(FlaskForm):
-    username = StringField('Username', validators=[InputRequired(), Length(min=3, max=20)])
-    password = PasswordField('Password', validators=[InputRequired(), Length(min=6, max=30)])
-    confirm_password = PasswordField('Confirm Password', validators=[InputRequired(), EqualTo('password', message='Passwords must match')])
+    username = StringField('Username', validators=[DataRequired(), Length(min=3)])
+    password = PasswordField('Password', validators=[DataRequired(), Length(min=6)])
+    confirm_password = PasswordField('Confirm Password', validators=[
+        DataRequired(), EqualTo('password', message='Password harus sama dengan konfirmasi.')
+    ])
     submit = SubmitField('Register')
 
-class LoginForm(FlaskForm):
-    username = StringField('Username', validators=[InputRequired()])
-    password = PasswordField('Password', validators=[InputRequired()])
-    submit = SubmitField('Log In')
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-@app.route('/')
-def home():
-    if 'user' in session:
-        return redirect(url_for('dashboard'))
-    return redirect(url_for('login'))
+@app.route('/', methods=['GET', 'POST'])
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        uname = form.username.data
+        pwd = form.password.data
+        if uname in users and users[uname]['password'] == pwd:
+            session['username'] = uname
+            login_activity.append({'user': uname, 'time': datetime.now()})
+            flash('Login berhasil!', 'success')
+            return redirect(url_for('dashboard'))
+        else:
+            flash('Login gagal. Cek kembali username atau password.', 'error')
+    return render_template('login.html', form=form)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegisterForm()
     if form.validate_on_submit():
-        username = form.username.data.lower()
-        password = form.password.data
-
-        if username in users_db:
-            flash('Username already taken, please choose another.', 'error')
-            return redirect(url_for('register'))
-
-        hashed_pw = generate_password_hash(password)
-        users_db[username] = hashed_pw
-
-        flash('Registration successful! Please login.', 'success')
-        return redirect(url_for('login'))
-
-    return render_template('register.html', form=form)
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    form = LoginForm()
-    if form.validate_on_submit():
-        username = form.username.data.lower()
-        password = form.password.data
-
-        user_pw_hash = users_db.get(username)
-        if not user_pw_hash or not check_password_hash(user_pw_hash, password):
-            flash('Invalid username or password.', 'error')
+        uname = form.username.data
+        pwd = form.password.data
+        if uname not in users:
+            users[uname] = {'password': pwd, 'profile_pic': None}
+            user_tasks[uname] = []
+            user_messages[uname] = []
+            user_notifications[uname] = []
+            flash('Registrasi berhasil! Silakan login.', 'success')
             return redirect(url_for('login'))
-
-        session['user'] = username
-        # Default profile pic kosong saat login pertama
-        if 'profile_pic' not in session:
-            session['profile_pic'] = None
-        flash('Login successful!', 'success')
-        return redirect(url_for('dashboard'))
-
-    return render_template('login.html', form=form)
+        else:
+            flash('Username sudah digunakan.', 'error')
+    return render_template('register.html', form=form)
 
 @app.route('/dashboard', methods=['GET', 'POST'])
 def dashboard():
-    if 'user' not in session:
-        flash('Please login first.', 'error')
+    if 'username' not in session:
         return redirect(url_for('login'))
+    
+    uname = session['username']
+    profile_pic = users[uname].get('profile_pic')
 
-    if request.method == 'POST':
-        if 'profile_pic' not in request.files:
-            flash('No file part in the form.', 'error')
-            return redirect(url_for('dashboard'))
-
+    # Handle profile pic upload
+    if request.method == 'POST' and 'profile_pic' in request.files:
         file = request.files['profile_pic']
-        if file.filename == '':
-            flash('No file selected.', 'error')
-            return redirect(url_for('dashboard'))
-
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            # Buat nama file unik dengan username supaya tidak bentrok
-            filename = f"{session['user']}_{filename}"
+        if file.filename != '':
+            filename = secure_filename(f"{uname}_{file.filename}")
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(filepath)
-
-            # Simpan nama file di session
-            session['profile_pic'] = filename
-            flash('Foto profil berhasil diupload.', 'success')
-            return redirect(url_for('dashboard'))
-        else:
-            flash('File tidak diperbolehkan. Gunakan file gambar (png, jpg, jpeg, gif).', 'error')
+            users[uname]['profile_pic'] = filename
+            flash('Foto profil berhasil diubah.', 'success')
             return redirect(url_for('dashboard'))
 
-    # Contoh data dummy statistik, pesan, dan quote harian
+    # Stats
     stats = {
-        'total_logins': 5,
-        'tasks_pending': 3,
-        'unread_messages': 2,
+        'total_logins': len([log for log in login_activity if log['user'] == uname]),
+        'tasks_pending': len([task for task in user_tasks.get(uname, []) if not task['done']]),
+        'unread_messages': len(user_messages.get(uname, [])),
     }
 
-    messages = [
-        {'title': 'Meeting Reminder', 'body': 'Jangan lupa meeting jam 10 pagi.'},
-        {'title': 'Update Project', 'body': 'Project sudah mencapai milestone kedua.'},
-    ]
+    # Tasks
+    if request.args.get('add_task'):
+        task_text = request.args.get('add_task')
+        if task_text:
+            user_tasks[uname].append({'text': task_text, 'done': False})
+            flash('Tugas ditambahkan.', 'success')
+            return redirect(url_for('dashboard'))
 
-    daily_quote = "Success is not final, failure is not fatal: it is the courage to continue that counts."
+    if request.args.get('toggle_task'):
+        index = int(request.args.get('toggle_task'))
+        if 0 <= index < len(user_tasks[uname]):
+            user_tasks[uname][index]['done'] = not user_tasks[uname][index]['done']
+            return redirect(url_for('dashboard'))
 
-    return render_template('dashboard.html',
-                        username=session['user'],
-                        profile_pic=session.get('profile_pic'),
-                        stats=stats,
-                        messages=messages,
-                        daily_quote=daily_quote)
+    # Messages, Notifications, Quote
+    messages = user_messages.get(uname, [])
+    notifications = user_notifications.get(uname, [])
+    daily_quote = random.choice(DAILY_QUOTES)
+
+    return render_template(
+        'dashboard.html',
+        username=uname,
+        profile_pic=profile_pic,
+        stats=stats,
+        tasks=user_tasks[uname],
+        messages=messages,
+        notifications=notifications,
+        daily_quote=daily_quote,
+        login_activity=login_activity
+    )
 
 @app.route('/logout')
 def logout():
-    session.pop('user', None)
-    session.pop('profile_pic', None)
-    flash('Logged out.', 'success')
+    session.pop('username', None)
+    flash('Anda telah logout.', 'success')
     return redirect(url_for('login'))
 
 if __name__ == '__main__':
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
     app.run(debug=True)

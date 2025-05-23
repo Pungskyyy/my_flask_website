@@ -2,16 +2,19 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 transition-all duration-300">
   <div class="max-w-7xl mx-auto">
 
     <!-- Header -->
     <header class="flex items-center justify-between mb-8">
       <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Halo, {{ username|capitalize }}!</h1>
-      <a href="{{ url_for('logout') }}" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded shadow">Logout</a>
+      <div class="flex items-center gap-4">
+        <button onclick="toggleDarkMode()" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white px-3 py-1 rounded transition">🌗</button>
+        <a href="{{ url_for('logout') }}" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded shadow">Logout</a>
+      </div>
     </header>
-    
-    <!-- Profile Picture + Upload Form -->
+
+    <!-- Profile Picture Upload -->
     <section class="flex items-center space-x-6 mb-8">
       <div class="w-24 h-24 rounded-full border-4 border-indigo-600 overflow-hidden bg-gray-300 dark:bg-gray-700">
         {% if profile_pic %}
@@ -22,7 +25,6 @@
           </svg>
         {% endif %}
       </div>
-    
       <form method="POST" enctype="multipart/form-data" class="flex flex-col space-y-3" action="{{ url_for('dashboard') }}">
         <label class="text-gray-700 dark:text-gray-300 font-semibold">Ubah Foto Profil</label>
         <input type="file" name="profile_pic" accept="image/*" class="text-sm file:border file:border-indigo-600 file:rounded file:px-3 file:py-1 file:bg-indigo-50 file:text-indigo-600 cursor-pointer" required />
@@ -31,41 +33,70 @@
         </button>
       </form>
     </section>
-    
-    <!-- Statistik Section -->
-    <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+
+    <!-- Statistik -->
+    <section class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
       <div class="bg-white dark:bg-gray-800 p-6 rounded shadow">
-        <h2 class="text-xl font-semibold mb-2 text-gray-800 dark:text-gray-200">Statistik Login</h2>
-        <p>Total Logins: <strong>{{ stats.total_logins }}</strong></p>
+        <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Login</h2>
+        <p class="text-indigo-600 dark:text-indigo-400 font-bold text-xl">{{ stats.total_logins }}</p>
       </div>
       <div class="bg-white dark:bg-gray-800 p-6 rounded shadow">
-        <h2 class="text-xl font-semibold mb-2 text-gray-800 dark:text-gray-200">Tasks Pending</h2>
-        <p>Sisa tugas: <strong>{{ stats.tasks_pending }}</strong></p>
+        <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Tugas</h2>
+        <p class="text-indigo-600 dark:text-indigo-400 font-bold text-xl">{{ stats.tasks_pending }}</p>
       </div>
       <div class="bg-white dark:bg-gray-800 p-6 rounded shadow">
-        <h2 class="text-xl font-semibold mb-2 text-gray-800 dark:text-gray-200">Unread Messages</h2>
-        <p>Pesan belum dibaca: <strong>{{ stats.unread_messages }}</strong></p>
+        <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Pesan</h2>
+        <p class="text-indigo-600 dark:text-indigo-400 font-bold text-xl">{{ stats.unread_messages }}</p>
+      </div>
+      <div class="bg-white dark:bg-gray-800 p-6 rounded shadow">
+        <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Status</h2>
+        <p class="text-green-600 dark:text-green-400 font-bold">Aktif</p>
       </div>
     </section>
-    
-    <!-- Messages Section -->
+
+    <!-- Grafik Login -->
     <section class="mb-8">
-      <h2 class="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Messages</h2>
-      <ul class="space-y-3">
-        {% for msg in messages %}
-          <li class="bg-white dark:bg-gray-800 p-4 rounded shadow">
-            <h3 class="font-semibold text-indigo-700 dark:text-indigo-400">{{ msg.title }}</h3>
-            <p class="text-gray-700 dark:text-gray-300">{{ msg.body }}</p>
-          </li>
+      <h2 class="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Grafik Login</h2>
+      <canvas id="loginChart" height="100"></canvas>
+    </section>
+
+    <!-- To-Do List -->
+    <section class="mb-8">
+      <h2 class="text-xl font-semibold mb-4 text-gray-900 dark:text-white">To-Do List</h2>
+      <ul class="space-y-2">
+        {% for todo in todos %}
+        <li class="flex items-center justify-between bg-white dark:bg-gray-800 p-3 rounded shadow">
+          <span class="{{ 'line-through text-gray-400' if todo.completed else 'text-gray-800 dark:text-gray-200' }}">{{ todo.task }}</span>
+          {% if not todo.completed %}
+          <form method="POST" action="{{ url_for('complete_task', task_id=todo.id) }}">
+            <button class="text-green-600 hover:text-green-800">✔</button>
+          </form>
+          {% endif %}
+        </li>
         {% else %}
-          <li class="text-gray-600 dark:text-gray-400">Tidak ada pesan.</li>
+        <li class="text-gray-600 dark:text-gray-400">Belum ada tugas.</li>
         {% endfor %}
       </ul>
     </section>
-    
+
+    <!-- Messages -->
+    <section class="mb-8">
+      <h2 class="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Pesan</h2>
+      <ul class="space-y-3">
+        {% for msg in messages %}
+        <li class="bg-white dark:bg-gray-800 p-4 rounded shadow">
+          <h3 class="font-semibold text-indigo-600 dark:text-indigo-400">{{ msg.title }}</h3>
+          <p class="text-gray-700 dark:text-gray-300">{{ msg.body }}</p>
+        </li>
+        {% else %}
+        <li class="text-gray-600 dark:text-gray-400">Tidak ada pesan.</li>
+        {% endfor %}
+      </ul>
+    </section>
+
     <!-- Daily Quote -->
-    <section>
-      <h2 class="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">Quote Harian</h2>
+    <section class="mb-8">
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Quote Harian</h2>
       <blockquote class="italic text-gray-600 dark:text-gray-400 border-l-4 border-indigo-600 pl-4">{{ daily_quote }}</blockquote>
     </section>
 
@@ -84,4 +115,43 @@
 
   </div>
 </div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const ctx = document.getElementById('loginChart').getContext('2d');
+  const loginChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels:  chart_data.dates|safe ,
+      datasets: [{
+        label: 'Login Harian',
+        data:  chart_data.counts|safe ,
+        backgroundColor: 'rgba(99, 102, 241, 0.2)',
+        borderColor: 'rgba(99, 102, 241, 1)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
+  });
+
+  function toggleDarkMode() {
+    document.documentElement.classList.toggle('dark');
+    localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+  }
+
+  // Auto toggle on load
+  if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
+</script>
 {% endblock %}
